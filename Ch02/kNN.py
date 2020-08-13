@@ -26,12 +26,7 @@ def classify0(inX, dataSet, labels, k):
     for i in range(k):
         voteIlabel = labels[sortedDistIndicies[i]]
         classCount[voteIlabel] = classCount.get(voteIlabel,0) + 1
-        
-        #if classCount.has_key(voteIlabel):
-        #    classCount[voteIlabel] += 1
-        #else:
-        #    classCount[voteIlabel] = 1
-    sortedClassCount = sorted(classCount.iteritems(), key=operator.itemgetter(1), reverse=True)
+    sortedClassCount = sorted(classCount.items(), key=operator.itemgetter(1), reverse=True)
     return sortedClassCount[0][0]
 
 def createDataSet():
@@ -73,11 +68,22 @@ def datingClassTest():
     errorCount = 0.0
     for i in range(numTestVecs):
         classifierResult = classify0(normMat[i,:],normMat[numTestVecs:m,:],datingLabels[numTestVecs:m],3)
-        print "the classifier came back with: %d, the real answer is: %d" % (classifierResult, datingLabels[i])
+        print( "the classifier came back with: %d, the real answer is: %d" % (classifierResult, datingLabels[i]))
         if (classifierResult != datingLabels[i]): errorCount += 1.0
-    print "the total error rate is: %f" % (errorCount/float(numTestVecs))
-    print errorCount
+    print( "the total error rate is: %f" % (errorCount/float(numTestVecs)))
+    print(errorCount)
     
+def classifyPerson():
+	resultsList = ['not at all', 'in samll dose', 'in large dose']
+	percentTime = float(input("percentage of time spent at playing video games?"))
+	ffMiles = float(input("frequency flier miles earned per year?"))
+	iceCream = float(input("liters of ice cream consumed per year?"))
+	datingDataMat, datingLabels = file2matrix('datingTestSet2.txt')
+	normMat, range, minVals = autoNorm(datingDataMat)
+	inArr = array([percentTime, ffMiles, iceCream])
+	classifierResult = classify0((inArr - minVals)/range, normMat, datingLabels, 3)
+	print("you will probably like this person:", resultsList[classifierResult - 1])
+
 def img2vector(filename):
     returnVect = zeros((1,1024))
     fr = open(filename)
@@ -89,7 +95,7 @@ def img2vector(filename):
 
 def handwritingClassTest():
     hwLabels = []
-    trainingFileList = listdir('trainingDigits')           #load the training set
+    trainingFileList = listdir('digits/trainingDigits')           #load the training set
     m = len(trainingFileList)
     trainingMat = zeros((m,1024))
     for i in range(m):
@@ -97,17 +103,17 @@ def handwritingClassTest():
         fileStr = fileNameStr.split('.')[0]     #take off .txt
         classNumStr = int(fileStr.split('_')[0])
         hwLabels.append(classNumStr)
-        trainingMat[i,:] = img2vector('trainingDigits/%s' % fileNameStr)
-    testFileList = listdir('testDigits')        #iterate through the test set
+        trainingMat[i,:] = img2vector('digits/trainingDigits/%s' % fileNameStr)
+    testFileList = listdir('digits/testDigits')        #iterate through the test set
     errorCount = 0.0
     mTest = len(testFileList)
     for i in range(mTest):
         fileNameStr = testFileList[i]
         fileStr = fileNameStr.split('.')[0]     #take off .txt
         classNumStr = int(fileStr.split('_')[0])
-        vectorUnderTest = img2vector('testDigits/%s' % fileNameStr)
+        vectorUnderTest = img2vector('digits/testDigits/%s' % fileNameStr)
         classifierResult = classify0(vectorUnderTest, trainingMat, hwLabels, 3)
-        print "the classifier came back with: %d, the real answer is: %d" % (classifierResult, classNumStr)
+        print( "the classifier came back with: %d, the real answer is: %d" % (classifierResult, classNumStr))
         if (classifierResult != classNumStr): errorCount += 1.0
-    print "\nthe total number of errors is: %d" % errorCount
-    print "\nthe total error rate is: %f" % (errorCount/float(mTest))
+    print( "\nthe total number of errors is: %d" % errorCount)
+    print( "\nthe total error rate is: %f" % (errorCount/float(mTest)))
