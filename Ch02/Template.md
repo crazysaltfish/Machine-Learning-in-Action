@@ -1,190 +1,185 @@
-# 欢迎使用 Cmd Markdown 编辑阅读器
+# 使用kNN初识机器学习
  
 ------
  
-我们理解您需要更便捷更高效的工具记录思想，整理笔记、知识，并将其中承载的价值传播给他人，**Cmd Markdown** 是我们给出的答案 —— 我们为记录思想和分享知识提供更专业的工具。 您可以使用 Cmd Markdown：
+机器学习算法k-邻近算法（kNN），它的工作原理是：存在样本数据集，在进行分类时，将新数据的每个特征与样本集中数据对应特征进行比较，然后提取出样本集中最相似的数据（最邻近），一般只选取前k个最相似的数据。一般步骤如下：
  
-> * 整理知识，学习笔记
-> * 发布日记，杂文，所见所想
-> * 撰写发布技术文稿（代码支持）
-> * 撰写发布学术论文（LaTeX 公式支持）
+> * 计算与已知类别数据集中的点与当前点之间的距离
+> * 按照距离递增次序排序
+> * 选取与当当前点距离最小的k个点
+> * 确定前k个点所在类别的频率
+> * 返回前k个点中出现频率最高的类别作为当前点的预测类别
  
-![cmd-markdown-logo](https://www.zybuluo.com/static/img/logo.png)
+以下程序基于python3.x
  
-除了您现在看到的这个 Cmd Markdown 在线版本，您还可以前往以下网址下载：
+<!-- ### 1. 制作一份待办事宜 [Todo 列表](https://www.zybuluo.com/mdeditor?url=https://www.zybuluo.com/static/editor/md-help.markdown#13-待办事宜-todo-列表) -->
+### 1. 使用python导入数据
  
-### [Windows/Mac/Linux 全平台客户端](https://www.zybuluo.com/cmd/)
- 
-> 请保留此份 Cmd Markdown 的欢迎稿兼使用说明，如需撰写新稿件，点击顶部工具栏右侧的 <i class="icon-file"></i> **新文稿** 或者使用快捷键 `Ctrl+Alt+N`。
- 
-------
- 
-## 什么是 Markdown
- 
-Markdown 是一种方便记忆、书写的纯文本标记语言，用户可以使用这些标记符号以最小的输入代价生成极富表现力的文档：譬如您正在阅读的这份文档。它使用简单的符号标记不同的标题，分割不同的段落，**粗体** 或者 *斜体* 某些文字，更棒的是，它还可以
- 
-### 1. 制作一份待办事宜 [Todo 列表](https://www.zybuluo.com/mdeditor?url=https://www.zybuluo.com/static/editor/md-help.markdown#13-待办事宜-todo-列表)
- 
-- [ ] 支持以 PDF 格式导出文稿
+<!-- - [ ] 支持以 PDF 格式导出文稿
 - [ ] 改进 Cmd 渲染算法，使用局部渲染技术提高渲染效率
 - [x] 新增 Todo 列表功能
 - [x] 修复 LaTex 公式渲染问题
-- [x] 新增 LaTex 公式编号功能
+- [x] 新增 LaTex 公式编号功能 -->
+```python
+from numpy import *
+import operator
+
+def createDataSet():
+    group = array([[1.0,1.1],[1.0,1.0],[0,0],[0,0.1]])
+    labels = ['A','A','B','B']
+    return group, labels
+```
  
-### 2. 书写一个质能守恒公式[^LaTeX]
+### 2. 编写kNN算法
  
-$$E=mc^2$$
+这里采用欧式距离计算两点的距离。
+
+```python
+def classify0(inX, dataSet, labels, k):
+    dataSetSize = dataSet.shape[0]
+    diffMat = tile(inX, (dataSetSize,1)) - dataSet
+    sqDiffMat = diffMat**2
+    sqDistances = sqDiffMat.sum(axis=1)
+    distances = sqDistances**0.5
+    sortedDistIndicies = distances.argsort()     
+    classCount={}          
+    for i in range(k):
+        voteIlabel = labels[sortedDistIndicies[i]]
+        classCount[voteIlabel] = classCount.get(voteIlabel,0) + 1
+    sortedClassCount = sorted(classCount.items(), key=operator.itemgetter(1), reverse=True)
+    return sortedClassCount[0][0]
+```
  
-### 3. 高亮一段代码[^code]
+### 3. 使用python处理文本数据
+ 
+首先使用line.strip()截取掉所有的回车字符，然后使用line.split('\t')将整行数据分割为元素列表。
+
+```python
+def file2matrix(filename):
+    fr = open(filename)
+    numberOfLines = len(fr.readlines())         #get the number of lines in the file
+    returnMat = zeros((numberOfLines,3))        #prepare matrix to return
+    classLabelVector = []                       #prepare labels return   
+    fr = open(filename)
+    index = 0
+    for line in fr.readlines():
+        line = line.strip()
+        listFromLine = line.split('\t')
+        returnMat[index,:] = listFromLine[0:3]
+        classLabelVector.append(int(listFromLine[-1]))
+        index += 1
+    return returnMat,classLabelVector
+```
+ 
+### 4. 使用Matplotlib创建散点图
+ 
+使用Matplotlib库提供的scatter函数个性化的标记散点图上的点。
+
+```python
+import matplotlib
+import matplotlib.pyplot as plt
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.scatter(datingDataMat[:,0], datingDataMat[:,1], s=15.0*num.array(datingLabels), c=15.0*num.array(datingLabels))
+plt.show()
+```
+ 
+### 5. 数值归一化
+ 
+消除各个特征的数值差异对结果的影响。
+
+```python
+def autoNorm(dataSet):
+    minVals = dataSet.min(0)
+    maxVals = dataSet.max(0)
+    ranges = maxVals - minVals
+    normDataSet = zeros(shape(dataSet))
+    m = dataSet.shape[0]
+    normDataSet = dataSet - tile(minVals, (m,1))
+    normDataSet = normDataSet/tile(ranges, (m,1))   #element wise divide
+    return normDataSet, ranges, minVals
+```
+
+### 6. 作为完整程序测试
+ 
+分类器针对约会网站的测试代码。
+
+```python
+def datingClassTest():
+    hoRatio = 0.50      #hold out 10%
+    datingDataMat,datingLabels = file2matrix('datingTestSet2.txt')       #load data setfrom file
+    normMat, ranges, minVals = autoNorm(datingDataMat)
+    m = normMat.shape[0]
+    numTestVecs = int(m*hoRatio)
+    errorCount = 0.0
+    for i in range(numTestVecs):
+        classifierResult = classify0(normMat[i,:],normMat[numTestVecs:m,:],datingLabels[numTestVecs:m],3)
+        print( "the classifier came back with: %d, the real answer is: %d" % (classifierResult, datingLabels[i]))
+        if (classifierResult != datingLabels[i]): errorCount += 1.0
+    print( "the total error rate is: %f" % (errorCount/float(numTestVecs)))
+    print(errorCount)
+```
+
+### 7. 构建完整可用系统
  
 ```python
-@requires_authorization
-class SomeClass:
-    pass
-if __name__ == '__main__':
-    # A comment
-    print 'hello world'
+def classifyPerson():
+	resultsList = ['not at all', 'in samll dose', 'in large dose']
+	percentTime = float(input("percentage of time spent at playing video games?"))
+	ffMiles = float(input("frequency flier miles earned per year?"))
+	iceCream = float(input("liters of ice cream consumed per year?"))
+	datingDataMat, datingLabels = file2matrix('datingTestSet2.txt')
+	normMat, range, minVals = autoNorm(datingDataMat)
+	inArr = array([percentTime, ffMiles, iceCream])
+	classifierResult = classify0((inArr - minVals)/range, normMat, datingLabels, 3)
+	print("you will probably like this person:", resultsList[classifierResult - 1])
+```
+
+### 8. 示例：手写识别系统
+ 
+- 准备数据：将图像转化为测试向量
+
+```python
+def img2vector(filename):
+    returnVect = zeros((1,1024))
+    fr = open(filename)
+    for i in range(32):
+        lineStr = fr.readline()
+        for j in range(32):
+            returnVect[0,32*i+j] = int(lineStr[j])
+    return returnVect
+```
+
+- 测试算法：使用k-邻近算法识别手机数字
+
+```python
+def handwritingClassTest():
+    hwLabels = []
+    trainingFileList = listdir('digits/trainingDigits')           #load the training set
+    m = len(trainingFileList)
+    trainingMat = zeros((m,1024))
+    for i in range(m):
+        fileNameStr = trainingFileList[i]
+        fileStr = fileNameStr.split('.')[0]     #take off .txt
+        classNumStr = int(fileStr.split('_')[0])
+        hwLabels.append(classNumStr)
+        trainingMat[i,:] = img2vector('digits/trainingDigits/%s' % fileNameStr)
+    testFileList = listdir('digits/testDigits')        #iterate through the test set
+    errorCount = 0.0
+    mTest = len(testFileList)
+    for i in range(mTest):
+        fileNameStr = testFileList[i]
+        fileStr = fileNameStr.split('.')[0]     #take off .txt
+        classNumStr = int(fileStr.split('_')[0])
+        vectorUnderTest = img2vector('digits/testDigits/%s' % fileNameStr)
+        classifierResult = classify0(vectorUnderTest, trainingMat, hwLabels, 3)
+        print( "the classifier came back with: %d, the real answer is: %d" % (classifierResult, classNumStr))
+        if (classifierResult != classNumStr): errorCount += 1.0
+    print( "\nthe total number of errors is: %d" % errorCount)
+    print( "\nthe total error rate is: %f" % (errorCount/float(mTest)))
 ```
  
-### 4. 高效绘制 [流程图](https://www.zybuluo.com/mdeditor?url=https://www.zybuluo.com/static/editor/md-help.markdown#7-流程图)
+作者 [@crazysaltfish](https://github.com/crazysaltfish)     
+2020 年 08月 14日    
  
-```flow
-st=>start: Start
-op=>operation: Your Operation
-cond=>condition: Yes or No?
-e=>end
-st->op->cond
-cond(yes)->e
-cond(no)->op
-```
- 
-### 5. 高效绘制 [序列图](https://www.zybuluo.com/mdeditor?url=https://www.zybuluo.com/static/editor/md-help.markdown#8-序列图)
- 
-```seq
-Alice->Bob: Hello Bob, how are you?
-Note right of Bob: Bob thinks
-Bob-->Alice: I am good thanks!
-```
- 
-### 6. 高效绘制 [甘特图](https://www.zybuluo.com/mdeditor?url=https://www.zybuluo.com/static/editor/md-help.markdown#9-甘特图)
- 
-```gantt
-    title 项目开发流程
-    section 项目确定
-        需求分析       :a1, 2016-06-22, 3d
-        可行性报告     :after a1, 5d
-        概念验证       : 5d
-    section 项目实施
-        概要设计      :2016-07-05  , 5d
-        详细设计      :2016-07-08, 10d
-        编码          :2016-07-15, 10d
-        测试          :2016-07-22, 5d
-    section 发布验收
-        发布: 2d
-        验收: 3d
-```
- 
-### 7. 绘制表格
- 
-| 项目        | 价格   |  数量  |
-| --------   | -----:  | :----:  |
-| 计算机     | \$1600 |   5     |
-| 手机        |   \$12   |   12   |
-| 管线        |    \$1    |  234  |
- 
-### 8. 更详细语法说明
- 
-想要查看更详细的语法说明，可以参考我们准备的 [Cmd Markdown 简明语法手册][1]，进阶用户可以参考 [Cmd Markdown 高阶语法手册][2] 了解更多高级功能。
- 
-总而言之，不同于其它 *所见即所得* 的编辑器：你只需使用键盘专注于书写文本内容，就可以生成印刷级的排版格式，省却在键盘和工具栏之间来回切换，调整内容和格式的麻烦。**Markdown 在流畅的书写和印刷级的阅读体验之间找到了平衡。** 目前它已经成为世界上最大的技术分享网站 GitHub 和 技术问答网站 StackOverFlow 的御用书写格式。
- 
----
- 
-## 什么是 Cmd Markdown
- 
-您可以使用很多工具书写 Markdown，但是 Cmd Markdown 是这个星球上我们已知的、最好的 Markdown 工具——没有之一 ：）因为深信文字的力量，所以我们和你一样，对流畅书写，分享思想和知识，以及阅读体验有极致的追求，我们把对于这些诉求的回应整合在 Cmd Markdown，并且一次，两次，三次，乃至无数次地提升这个工具的体验，最终将它演化成一个 **编辑/发布/阅读** Markdown 的在线平台——您可以在任何地方，任何系统/设备上管理这里的文字。
- 
-### 1. 实时同步预览
- 
-我们将 Cmd Markdown 的主界面一分为二，左边为**编辑区**，右边为**预览区**，在编辑区的操作会实时地渲染到预览区方便查看最终的版面效果，并且如果你在其中一个区拖动滚动条，我们有一个巧妙的算法把另一个区的滚动条同步到等价的位置，超酷！
- 
-### 2. 编辑工具栏
- 
-也许您还是一个 Markdown 语法的新手，在您完全熟悉它之前，我们在 **编辑区** 的顶部放置了一个如下图所示的工具栏，您可以使用鼠标在工具栏上调整格式，不过我们仍旧鼓励你使用键盘标记格式，提高书写的流畅度。
- 
-![tool-editor](https://www.zybuluo.com/static/img/toolbar-editor.png)
- 
-### 3. 编辑模式
- 
-完全心无旁骛的方式编辑文字：点击 **编辑工具栏** 最右侧的拉伸按钮或者按下 `Ctrl + M`，将 Cmd Markdown 切换到独立的编辑模式，这是一个极度简洁的写作环境，所有可能会引起分心的元素都已经被挪除，超清爽！
- 
-### 4. 实时的云端文稿
- 
-为了保障数据安全，Cmd Markdown 会将您每一次击键的内容保存至云端，同时在 **编辑工具栏** 的最右侧提示 `已保存` 的字样。无需担心浏览器崩溃，机器掉电或者地震，海啸——在编辑的过程中随时关闭浏览器或者机器，下一次回到 Cmd Markdown 的时候继续写作。
- 
-### 5. 离线模式
- 
-在网络环境不稳定的情况下记录文字一样很安全！在您写作的时候，如果电脑突然失去网络连接，Cmd Markdown 会智能切换至离线模式，将您后续键入的文字保存在本地，直到网络恢复再将他们传送至云端，即使在网络恢复前关闭浏览器或者电脑，一样没有问题，等到下次开启 Cmd Markdown 的时候，她会提醒您将离线保存的文字传送至云端。简而言之，我们尽最大的努力保障您文字的安全。
- 
-### 6. 管理工具栏
- 
-为了便于管理您的文稿，在 **预览区** 的顶部放置了如下所示的 **管理工具栏**：
- 
-![tool-manager](https://www.zybuluo.com/static/img/toolbar-manager.jpg)
- 
-通过管理工具栏可以：
- 
-<i class="icon-share"></i> 发布：将当前的文稿生成固定链接，在网络上发布，分享
-<i class="icon-file"></i> 新建：开始撰写一篇新的文稿
-<i class="icon-trash"></i> 删除：删除当前的文稿
-<i class="icon-cloud"></i> 导出：将当前的文稿转化为 Markdown 文本或者 Html 格式，并导出到本地
-<i class="icon-reorder"></i> 列表：所有新增和过往的文稿都可以在这里查看、操作
-<i class="icon-pencil"></i> 模式：切换 普通/Vim/Emacs 编辑模式
- 
-### 7. 阅读工具栏
- 
-![tool-manager](https://www.zybuluo.com/static/img/toolbar-reader.jpg)
- 
-通过 **预览区** 右上角的 **阅读工具栏**，可以查看当前文稿的目录并增强阅读体验。
- 
-工具栏上的五个图标依次为：
- 
-<i class="icon-list"></i> 目录：快速导航当前文稿的目录结构以跳转到感兴趣的段落
-<i class="icon-chevron-sign-left"></i> 视图：互换左边编辑区和右边预览区的位置
-<i class="icon-adjust"></i> 主题：内置了黑白两种模式的主题，试试 **黑色主题**，超炫！
-<i class="icon-desktop"></i> 阅读：心无旁骛的阅读模式提供超一流的阅读体验
-<i class="icon-fullscreen"></i> 全屏：简洁，简洁，再简洁，一个完全沉浸式的写作和阅读环境
- 
-### 8. 阅读模式
- 
-在 **阅读工具栏** 点击 <i class="icon-desktop"></i> 或者按下 `Ctrl+Alt+M` 随即进入独立的阅读模式界面，我们在版面渲染上的每一个细节：字体，字号，行间距，前背景色都倾注了大量的时间，努力提升阅读的体验和品质。
- 
-### 9. 标签、分类和搜索
- 
-在编辑区任意行首位置输入以下格式的文字可以标签当前文档：
- 
-标签： 未分类
- 
-标签以后的文稿在【文件列表】（Ctrl+Alt+F）里会按照标签分类，用户可以同时使用键盘或者鼠标浏览查看，或者在【文件列表】的搜索文本框内搜索标题关键字过滤文稿，如下图所示：
- 
-![file-list](https://www.zybuluo.com/static/img/file-list.png)
- 
-### 10. 文稿发布和分享
- 
-在您使用 Cmd Markdown 记录，创作，整理，阅读文稿的同时，我们不仅希望它是一个有力的工具，更希望您的思想和知识通过这个平台，连同优质的阅读体验，将他们分享给有相同志趣的人，进而鼓励更多的人来到这里记录分享他们的思想和知识，尝试点击 <i class="icon-share"></i> (Ctrl+Alt+P) 发布这份文档给好友吧！
- 
-------
- 
-再一次感谢您花费时间阅读这份欢迎稿，点击 <i class="icon-file"></i> (Ctrl+Alt+N) 开始撰写新的文稿吧！祝您在这里记录、阅读、分享愉快！
- 
-作者 [@ghosert][3]     
-2016 年 07月 07日    
- 
-[^LaTeX]: 支持 **LaTeX** 编辑显示支持，例如：$\sum_{i=1}^n a_i=0$， 访问 [MathJax][4] 参考更多使用方法。
- 
-[^code]: 代码高亮功能支持包括 Java, Python, JavaScript 在内的，**四十一**种主流编程语言。
- 
-[1]: https://www.zybuluo.com/mdeditor?url=https://www.zybuluo.com/static/editor/md-help.markdown
-[2]: https://www.zybuluo.com/mdeditor?url=https://www.zybuluo.com/static/editor/md-help.markdown#cmd-markdown-高阶语法手册
-[3]: http://weibo.com/ghosert
-[4]: http://meta.math.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference
