@@ -2,6 +2,10 @@
  
 ------
  
+The code for the examples in Ch.1 is contained in the python module: kNN.py.
+The examples assume that datingTestSet.txt is in the current working directory.  
+Folders testDigits, and trainingDigits are assumed to be in this folder also.  
+ 
 机器学习算法k-邻近算法（kNN），它的工作原理是：存在样本数据集，在进行分类时，将新数据的每个特征与样本集中数据对应特征进行比较，然后提取出样本集中最相似的数据（最邻近），一般只选取前k个最相似的数据。一般步骤如下：
  
 > * 计算与已知类别数据集中的点与当前点之间的距离
