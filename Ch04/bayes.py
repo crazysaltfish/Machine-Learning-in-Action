@@ -77,7 +77,7 @@ def testingNB():
 
 def textParse(bigString):    #input is big string, #output is word list
     import re
-    listOfTokens = re.split(r'\W*', bigString)
+    listOfTokens = re.split(r'\W', bigString)
     return [tok.lower() for tok in listOfTokens if len(tok) > 2] 
     
 def spamTest():
@@ -92,7 +92,7 @@ def spamTest():
         fullText.extend(wordList)
         classList.append(0)
     vocabList = createVocabList(docList)#create vocabulary
-    trainingSet = range(50); testSet=[]           #create test set
+    trainingSet = list(range(50)); testSet=[]           #create test set
     for i in range(10):
         randIndex = int(random.uniform(0,len(trainingSet)))
         testSet.append(trainingSet[randIndex])
@@ -116,7 +116,7 @@ def calcMostFreq(vocabList,fullText):
     freqDict = {}
     for token in vocabList:
         freqDict[token]=fullText.count(token)
-    sortedFreq = sorted(freqDict.iteritems(), key=operator.itemgetter(1), reverse=True) 
+    sortedFreq = sorted(freqDict.items(), key=operator.itemgetter(1), reverse=True) 
     return sortedFreq[:30]       
 
 def localWords(feed1,feed0):
@@ -136,7 +136,7 @@ def localWords(feed1,feed0):
     top30Words = calcMostFreq(vocabList,fullText)   #remove top 30 words
     for pairW in top30Words:
         if pairW[0] in vocabList: vocabList.remove(pairW[0])
-    trainingSet = range(2*minLen); testSet=[]           #create test set
+    trainingSet = list(range(2*minLen)); testSet=[]           #create test set
     for i in range(20):
         randIndex = int(random.uniform(0,len(trainingSet)))
         testSet.append(trainingSet[randIndex])
